@@ -114,7 +114,25 @@ def point_add(a, b, p, x0, y0, x1, y1):
     # lam = ((y1 - y0) * (x1 - x0)^-1)%p
     # xr  = (lam^2 - xp - xq) %p
     # yr  = (lam * (xp - xr) - yp ) %p
-    xr, yr = None, None
+    # xr, yr = None, None
+
+    if (str(x0) == str(x1)) and (str(y0) == str(y1)):
+        raise Exception("EC Points must not be equal")
+
+    # Check for inverse
+    if ( (str(x0) == str(x1)) or (not is_point_on_curve(a, b, p, x0, y0)) or (not is_point_on_curve(a, b, p, x1, y1))):
+        return (None, None)
+
+    # Check whether either point is infinity
+    if (x0 is None and y0 is None):
+        return (x1, y1)
+
+    if (x1 is None and y1 is None):
+        return (x0, y0)
+
+    lam = (y1.mod_sub(y0, p)).mod_mul((x1.mod_sub(x0, p).mod_inverse(p)), p)
+    xr = lam.mod_pow(2, p).mod_sub(x0, p).mod_sub(x1, p)
+    yr = x0.mod_sub(xr, p).mod_mul(lam, p).mod_sub(y0, p)
     
     return (xr, yr)
 
@@ -131,7 +149,14 @@ def point_double(a, b, p, x, y):
     """  
 
     # ADD YOUR CODE BELOW
+    if x is None and y is None:
+        return None, None
+
     xr, yr = None, None
+
+    lam = (x.mod_pow(2, p).mod_mul(Bn(3), p).mod_add(a, p)).mod_mul((Bn(2).mod_mul(y, p).mod_inverse(p)), p)
+    xr = lam.mod_pow(2, p).mod_sub(Bn(2).mod_mul(x, p), p)
+    yr = x.mod_sub(xr, p).mod_mul(lam, p).mod_sub(y, p)
 
     return xr, yr
 
@@ -153,7 +178,9 @@ def point_scalar_multiplication_double_and_add(a, b, p, x, y, scalar):
     P = (x, y)
 
     for i in range(scalar.num_bits()):
-        pass ## ADD YOUR CODE HERE
+        if scalar.is_bit_set(i):
+            Q = point_add(a, b, p, Q[0], Q[1], P[0], P[1])
+        P = point_double(a, b, p, P[0], P[1])
 
     return Q
 
@@ -179,7 +206,13 @@ def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):
     R1 = (x, y)
 
     for i in reversed(range(0,scalar.num_bits())):
-        pass ## ADD YOUR CODE HERE
+        ## ADD YOUR CODE HERE
+        if scalar.is_bit_set(i):
+            R0 = point_add(a, b, p, R0[0], R0[1], R1[0], R1[1])
+            R1 = point_double(a, b, p, R1[0], R1[1])
+        else:
+            R1 = point_add(a, b, p, R0[0], R0[1], R1[0], R1[1])
+            R0 = point_double(a, b, p, R0[0], R0[1])
 
     return R0
 
