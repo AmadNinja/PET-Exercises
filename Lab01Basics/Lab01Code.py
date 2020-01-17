@@ -290,8 +290,6 @@ def dh_encrypt(pub, message, aliceSig = None):
     G, priv_dec, pub_enc = dh_get_key()
     shared_key = pub.pt_mul(priv_dec)
     shared_key_hash = md5(shared_key.export()).digest()
-    # shared_key_hash = sha256(shared_key).digest()
-    # plaintext = message.encode("utf8")
 
     iv, ciphertxt, tag = encrypt_message(shared_key_hash, message)
 
@@ -311,7 +309,6 @@ def dh_decrypt(priv, ciphertext, aliceVer = None):
     iv, ciphertxt, tag, signature, pub_enc = ciphertext
     shared_key = pub_enc.pt_mul(priv)
     shared_key_hash = md5(shared_key.export()).digest()
-    # shared_key_hash = sha256(shared_key).digest()
     plaintext = decrypt_message(shared_key_hash, iv, ciphertxt, tag)
 
     signature_verified = None
@@ -359,13 +356,13 @@ def test_fails():
     # Encrypt with a signature
     message = dh_encrypt(pub_enc, plain_text, True)
     
-    plain_text_bad = "ohGodNo$"*100
+    plain_text_bad = "toTest || !ToTest$"*100
     message_2 = dh_encrypt(pub_enc, plain_text_bad, True)
 
-    # Structure of message: (iv, ciphertext, tag, signature, my_pub_key)
+    # Structure of message: (iv, ciphertext, tag, signature, pub_enc)
     message_new = (message[0], message[1], message[2], message_2[3], message[4])
 
-    # Now go and decrypt to ensure the data matches
+    # Now decrypt to be sure the data matches
     dec_message, sig_verified = dh_decrypt(priv_dec, message_new, True)
 
     assert dec_message == plain_text
