@@ -192,7 +192,7 @@ def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):
 #          - Implement ECDSA signature verification 
 #            using petlib.ecdsa
 
-from hashlib import sha256
+from hashlib import md5, sha256
 from petlib.ec import EcGroup
 from petlib.ecdsa import do_ecdsa_setup, do_ecdsa_sign, do_ecdsa_verify
 
@@ -254,15 +254,38 @@ def dh_encrypt(pub, message, aliceSig = None):
     """
     
     ## YOUR CODE HERE
-    pass
+    G, priv_dec, pub_enc = dh_get_key()
+    shared_key = pub.pt_mul(priv_dec)
+    shared_key_hash = md5(shared_key.export()).digest()
+    # shared_key_hash = sha256(shared_key).digest()
+    # plaintext = message.encode("utf8")
+
+    iv, ciphertxt, tag = encrypt_message(shared_key_hash, message)
+
+    signature = None
+    if aliceSig:
+        signature = ecdsa_sign(G, priv_dec, message)
+
+    encrypted = (iv, ciphertxt, tag, signature, pub_enc)
+    return encrypted
 
 def dh_decrypt(priv, ciphertext, aliceVer = None):
     """ Decrypt a received message encrypted using your public key, 
     of which the private key is provided. Optionally verify 
     the message came from Alice using her verification key."""
-    
     ## YOUR CODE HERE
-    pass
+    G = EcGroup()
+    iv, ciphertxt, tag, signature, pub_enc = ciphertext
+    shared_key = pub_enc.pt_mul(priv)
+    shared_key_hash = md5(shared_key.export()).digest()
+    # shared_key_hash = sha256(shared_key).digest()
+    plaintext = decrypt_message(shared_key_hash, iv, ciphertxt, tag)
+
+    signature_verified = None
+    if signature and aliceVer:
+        signature_verified = ecdsa_verify(G, pub_enc, plaintext, signature)
+
+    return (plaintext.decode("utf8"), signature_verified)
 
 ## NOTE: populate those (or more) tests
 #  ensure they run using the "py.test filename" command.
@@ -270,13 +293,50 @@ def dh_decrypt(priv, ciphertext, aliceVer = None):
 #  $ py.test-2.7 --cov-report html --cov Lab01Code Lab01Code.py 
 
 def test_encrypt():
-    assert False
+    G, priv_dec, pub_enc = dh_get_key()
+    plain_text = "test"*100
+
+    # Encrypt without a signature
+    iv, ciphertext, tag, signature, pub_enc = dh_encrypt(pub_enc, plain_text, None)
+    assert signature == None
+
+    # Encrypt with a signature
+    iv, ciphertext, tag, signature, pub_enc = dh_encrypt(pub_enc, plain_text, True)
+    assert len(iv) == 16
+    assert ciphertext != plain_text
 
 def test_decrypt():
-    assert False
+    G, priv_dec, pub_enc = dh_get_key()
+    plain_text = "SomeWeirdTestingCode9999$"*100
+    encrypted = dh_encrypt(pub_enc, plain_text, True)
+
+    # Now go and decrypt to ensure the data matches
+    dec_message, sig_verified = dh_decrypt(priv_dec, encrypted, True)
+
+    print "dec, plain"
+    print dec_message
+    print plain_text
+
+    assert dec_message == plain_text
 
 def test_fails():
-    assert False
+    G, priv_dec, pub_enc = dh_get_key()
+    plain_text = "SomeWeirdTestingCode9999$"*100
+
+    # Encrypt with a signature
+    message = dh_encrypt(pub_enc, plain_text, True)
+    
+    plain_text_bad = "ohGodNo$"*100
+    message_2 = dh_encrypt(pub_enc, plain_text_bad, True)
+
+    # Structure of message: (iv, ciphertext, tag, signature, my_pub_key)
+    message_new = (message[0], message[1], message[2], message_2[3], message[4])
+
+    # Now go and decrypt to ensure the data matches
+    dec_message, sig_verified = dh_decrypt(priv_dec, message_new, True)
+
+    assert dec_message == plain_text
+    assert sig_verified == False
 
 #####################################################
 # TASK 6 -- Time EC scalar multiplication
