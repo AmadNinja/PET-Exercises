@@ -111,6 +111,9 @@ def point_add(a, b, p, x0, y0, x1, y1):
     """
 
     # ADD YOUR CODE BELOW
+    # lam = ((y1 - y0) * (x1 - x0)^-1)%p
+    # xr  = (lam^2 - xp - xq) %p
+    # yr  = (lam * (xp - xr) - yp ) %p
     xr, yr = None, None
     
     return (xr, yr)
@@ -191,7 +194,7 @@ def point_scalar_multiplication_montgomerry_ladder(a, b, p, x, y, scalar):
 
 from hashlib import sha256
 from petlib.ec import EcGroup
-from petlib.ecdsa import do_ecdsa_sign, do_ecdsa_verify
+from petlib.ecdsa import do_ecdsa_setup, do_ecdsa_sign, do_ecdsa_verify
 
 def ecdsa_key_gen():
     """ Returns an EC group, a random private key for signing 
@@ -207,6 +210,11 @@ def ecdsa_sign(G, priv_sign, message):
     plaintext =  message.encode("utf8")
 
     ## YOUR CODE HERE
+    G = EcGroup()
+    ver_key = priv_sign * G.generator()
+    digest = sha256(plaintext).digest()
+    kinv_rp = do_ecdsa_setup(G, priv_sign)
+    sig = do_ecdsa_sign(G, priv_sign, digest, kinv_rp = kinv_rp)
 
     return sig
 
@@ -215,6 +223,8 @@ def ecdsa_verify(G, pub_verify, message, sig):
     plaintext =  message.encode("utf8")
 
     ## YOUR CODE HERE
+    digest = sha256(plaintext).digest()
+    res = do_ecdsa_verify(G, pub_verify, sig, digest)
 
     return res
 
