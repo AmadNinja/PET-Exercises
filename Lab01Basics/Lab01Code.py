@@ -54,7 +54,7 @@ def decrypt_message(K, iv, ciphertext, tag):
     try:
         plain = aes.quick_gcm_dec(K, iv, ciphertext, tag)
     except:
-       raise
+       raise Exception("decryption failed")
 
     return plain.encode("utf8")
 
@@ -328,12 +328,17 @@ def test_encrypt():
 
     # Encrypt without a signature
     iv, ciphertext, tag, signature, pub_enc = dh_encrypt(pub_enc, plain_text, None)
+    assert ciphertext != plain_text
+    assert len(ciphertext) == len(plain_text)
     assert signature == None
 
     # Encrypt with a signature
     iv, ciphertext, tag, signature, pub_enc = dh_encrypt(pub_enc, plain_text, True)
-    assert len(iv) == 16
     assert ciphertext != plain_text
+    assert len(ciphertext) == len(plain_text)
+    assert signature != None
+    assert len(iv) == 16
+
 
 def test_decrypt():
     G, priv_dec, pub_enc = dh_get_key()
@@ -347,9 +352,11 @@ def test_decrypt():
     print dec_message
     print plain_text
 
+    assert len(dec_message) == len(plain_text)
     assert dec_message == plain_text
 
 def test_fails():
+    from pytest import raises
     G, priv_dec, pub_enc = dh_get_key()
     plain_text = "SomeWeirdTestingCode9999$"*100
 
@@ -359,14 +366,35 @@ def test_fails():
     plain_text_bad = "toTest || !ToTest$"*100
     message_2 = dh_encrypt(pub_enc, plain_text_bad, True)
 
-    # Structure of message: (iv, ciphertext, tag, signature, pub_enc)
+    # Message: (iv, ciphertext, tag, signature, pub_enc)
     message_new = (message[0], message[1], message[2], message_2[3], message[4])
 
     # Now decrypt to be sure the data matches
     dec_message, sig_verified = dh_decrypt(priv_dec, message_new, True)
 
     assert dec_message == plain_text
-    assert sig_verified == False
+    assert sig_verified == False        # As we inserted the signature from message 2 in the message
+
+    with raises(Exception) as excinfo:
+        fake_message = (message[0], urandom(len(message[1])), message[2], message[3], message[4])
+        dh_decrypt(priv_dec, fake_message)
+    assert 'decryption failed' in str(excinfo.value)
+
+    with raises(Exception) as excinfo:
+        dh_decrypt(priv_dec, (message[0], message[1], urandom(len(message[2])), message[3], message[4]) )
+    assert 'decryption failed' in str(excinfo.value)
+
+    with raises(Exception) as excinfo:
+        dh_decrypt(priv_dec, (urandom(len(message[0])), message[1], message[2], message[3], message[4]))
+    assert 'decryption failed' in str(excinfo.value)
+
+    with raises(Exception) as excinfo:
+        dh_decrypt(priv_dec, (message[0], message[1], message[2], message[3], G.order().random() * G.generator()))
+    assert 'decryption failed' in str(excinfo.value)
+
+    with raises(Exception) as excinfo:
+        dh_decrypt(G.order().random(), (message[0], message[1], message[2], message[3], message[4]))
+    assert 'decryption failed' in str(excinfo.value)
 
 #####################################################
 # TASK 6 -- Time EC scalar multiplication
