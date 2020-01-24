@@ -52,6 +52,7 @@ OneHopMixMessage = namedtuple('OneHopMixMessage', ['ec_public_key',
 from petlib.ec import EcGroup
 from petlib.hmac import Hmac, secure_compare
 from petlib.cipher import Cipher
+from os import urandom
 
 def mix_server_one_hop(private_key, message_list):
     """ Implements the decoding for a simple one-hop mix. 
@@ -133,6 +134,23 @@ def mix_client_one_hop(public_key, address, message):
     client_public_key  = private_key * G.generator()
 
     ## ADD CODE HERE
+    shared_key = private_key * public_key
+    key_stuff = sha512(shared_key.export()).digest()
+
+    hmac_key = key_stuff[:16]
+    address_key = key_stuff[16:32]
+    message_key = key_stuff[32:48]
+
+    iv = urandom(16)
+
+    # Does not work with iv = urandom???? Used b blabla instead --> demander
+    address_cipher = aes_ctr_enc_dec(address_key, b'\x00'*16, address_plaintext)            
+    message_cipher = aes_ctr_enc_dec(message_key, b'\x00'*16, message_plaintext)
+
+    h = Hmac(b"sha512", hmac_key)
+    h.update(address_cipher)
+    h.update(message_cipher)
+    expected_mac = h.digest()[:20]
 
     return OneHopMixMessage(client_public_key, expected_mac, address_cipher, message_cipher)
 
