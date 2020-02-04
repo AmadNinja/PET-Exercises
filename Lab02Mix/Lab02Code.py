@@ -141,11 +141,9 @@ def mix_client_one_hop(public_key, address, message):
     address_key = key_stuff[16:32]
     message_key = key_stuff[32:48]
 
-    iv = urandom(16)
-
-    # Does not work with iv = urandom???? Used b blabla instead --> demander
-    address_cipher = aes_ctr_enc_dec(address_key, b'\x00'*16, address_plaintext)            
-    message_cipher = aes_ctr_enc_dec(message_key, b'\x00'*16, message_plaintext)
+    iv = b"\x00"*16
+    address_cipher = aes_ctr_enc_dec(address_key, iv, address_plaintext)            
+    message_cipher = aes_ctr_enc_dec(message_key, iv, message_plaintext)
 
     h = Hmac(b"sha512", hmac_key)
     h.update(address_cipher)
@@ -280,6 +278,80 @@ def mix_client_n_hop(public_keys, address, message):
     client_public_key  = private_key * G.generator()
 
     ## ADD CODE HERE
+    shared_element = None
+    address_cipher = None
+    message_cipher = None
+    hmacs = []
+    hmackeys = []
+    messkeys = []
+    addkeys = []
+    messciphers = []
+    addciphers = []
+    for i in range(len(public_keys)):
+    	## First get a shared key                                                   #*
+        shared_element = private_key * public_keys[i]
+        key_material = sha512(shared_element.export()).digest()                  
+
+        # Use different parts of the shared key for different operations
+        hmac_key = key_material[:16]                                                # This section: like the beginning of mix_server_n_hop
+        address_key = key_material[16:32]
+        message_key = key_material[32:48]
+
+        # Extract a blinding factor for the new private key
+        blinding_factor = Bn.from_binary(key_material[48:])
+        private_key = blinding_factor * private_key                                 #*
+
+        # Add keys to corresponding arrays
+        hmackeys += [hmac_key]
+        addkeys += [address_key]
+        messkeys += [message_key]
+
+
+    for i in range(len(public_keys)):
+
+    	# Encrypt address & message 
+        iv = b"\x00"*16
+        
+        if i==0:
+        	address_cipher = aes_ctr_enc_dec(addkeys[len(public_keys)-1-i], iv, address_plaintext)
+        	message_cipher = aes_ctr_enc_dec(messkeys[len(public_keys)-1-i], iv, message_plaintext)
+        else:
+        	address_cipher = aes_ctr_enc_dec(addkeys[len(public_keys)-1-i], iv, address_cipher)
+        	message_cipher = aes_ctr_enc_dec(messkeys[len(public_keys)-1-i], iv, message_cipher)
+
+        messciphers += [message_cipher]
+        addciphers += [address_cipher]
+
+
+    for i in range(len(public_keys)):
+
+        # Encryption of hmacs. Individual as we need whole ciphertext to compute macs correctly
+        # Use mac keys in reverse as last ciphertext needs first key
+        new_hmacs = []
+        for j, other_mac in enumerate(hmacs):
+            # Ensure IV is not the same for each hmac
+            iv = pack("H14s", j, b"\x00"*14)
+
+            hmac_plaintext = aes_ctr_enc_dec(hmackeys[len(public_keys)-1-i], iv, other_mac)
+            new_hmacs += [hmac_plaintext]  
+
+
+        h = Hmac(b"sha512", hmackeys[len(public_keys)-1-i])
+        # Calculate new digest
+        new_hmacs = new_hmacs[::-1]
+        for other_mac in reversed(new_hmacs):
+                h.update(other_mac) 
+
+        h.update(addciphers[i])
+        h.update(messciphers[i])
+        
+        digest  = h.digest()
+        digest	= digest[:20]
+
+        new_hmacs += [digest]
+        hmacs = new_hmacs[::-1]
+
+    hmacs = new_hmacs[::-1]
 
     return NHopMixMessage(client_public_key, hmacs, address_cipher, message_cipher)
 
@@ -330,18 +402,43 @@ def analyze_trace(trace, target_number_of_friends, target=0):
     """
 
     ## ADD CODE HERE
+    potential_friends = Counter()
+    # Get targets Alice sent messages to + get messages that were sent
+    for senders, receivers in trace:
+        if target in senders:
+            for receiver in receivers:
+                potential_friends[receiver] +=1
 
-    return []
+    likely_friends = []
+    # From potential_friends take the first n (target_number_of_friends) most common. 
+    # From the list of pairs returned, the first element of the pair will be the friend and the other the frequency
+    for friend,frequency in potential_friends.most_common(target_number_of_friends):
+    	likely_friends += [friend]
+
+    return likely_friends
 
 ## TASK Q1 (Question 1): The mix packet format you worked on uses AES-CTR with an IV set to all zeros. 
 #                        Explain whether this is a security concern and justify your answer.
 
-""" TODO: Your answer HERE """
+""" 
+    Using an IV set to all zeros is not false in itself, it could be used just once with a certain key and it would be fine.
+    Using an IV set to all zeros becomes a problem when using the same (key,iv) pair to encrypt two messages. 
+    If both the address and message used the same key, then the resulting ciphertexts are comprised.
+    In AES-CTR, the IV is combined with the key and to be XORed with the plaintext.
+    This means it would break under CPA (Chosen Plaintext Attack) as a same combination of (key,iv) will always create the same result.
+	This means we need to use a random IV for each encryption.
+ """
 
 
 ## TASK Q2 (Question 2): What assumptions does your implementation of the Statistical Disclosure Attack 
 #                        makes about the distribution of traffic from non-target senders to receivers? Is
 #                        the correctness of the result returned dependent on this background distribution?
-
-""" TODO: Your answer HERE """
+""" 
+    Our implementation assumes that we will have a normal distribution, thus non-target senders have no "friends" like Alice does. 
+    The correctness of the result returned depends on this assumption. 
+    If all senders also had a small group of corresponding receivers, the algorithm would not always work.
+    For example, if a non-target sender with a small group of potential receivers participates in the same rounds as the target. 
+    Here, the algorithm can't distinguish between non-target and target friends as they all have been sent the same amount of messages 
+    during the same mixing rounds.
+"""
 
