@@ -420,25 +420,12 @@ def analyze_trace(trace, target_number_of_friends, target=0):
 ## TASK Q1 (Question 1): The mix packet format you worked on uses AES-CTR with an IV set to all zeros. 
 #                        Explain whether this is a security concern and justify your answer.
 
-""" 
-    Using an IV set to all zeros is not false in itself, it could be used just once with a certain key and it would be fine.
-    Using an IV set to all zeros becomes a problem when using the same (key,iv) pair to encrypt two messages. 
-    If both the address and message used the same key, then the resulting ciphertexts are comprised.
-    In AES-CTR, the IV is combined with the key and to be XORed with the plaintext.
-    This means it would break under CPA (Chosen Plaintext Attack) as a same combination of (key,iv) will always create the same result.
-	This means we need to use a random IV for each encryption.
- """
+""" TODO: Your answer HERE """
 
 
 ## TASK Q2 (Question 2): What assumptions does your implementation of the Statistical Disclosure Attack 
 #                        makes about the distribution of traffic from non-target senders to receivers? Is
 #                        the correctness of the result returned dependent on this background distribution?
-""" 
-    Our implementation assumes that we will have a normal distribution, thus non-target senders have no "friends" like Alice does. 
-    The correctness of the result returned depends on this assumption. 
-    If all senders also had a small group of corresponding receivers, the algorithm would not always work.
-    For example, if a non-target sender with a small group of potential receivers participates in the same rounds as the target. 
-    Here, the algorithm can't distinguish between non-target and target friends as they all have been sent the same amount of messages 
-    during the same mixing rounds.
-"""
+
+""" TODO: Your answer HERE """
 
