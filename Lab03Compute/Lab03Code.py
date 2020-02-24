@@ -32,7 +32,8 @@ def keyGen(params):
    (G, g, h, o) = params
    
    # ADD CODE HERE
-
+   priv = o.random()                                                                # Key generation selects a private key between 1 and the order of the group
+   pub = priv * g                                                                   # Public keys is private key * g (generator of the group)
    return (priv, pub)
 
 def encrypt(params, pub, m):
@@ -41,7 +42,10 @@ def encrypt(params, pub, m):
         raise Exception("Message value to low or high.")
 
    # ADD CODE HERE
-
+    (G, g, h, o) = params
+    priv = o.random()
+                                                                                    # A ciphertext is composed of two elements: (k *g, k * pub + m * h), 
+    c = (priv * g, priv * pub + m * h )                                             # where k is a random number mod the order of the group.
     return c
 
 def isCiphertext(params, ciphertext):
@@ -76,7 +80,8 @@ def decrypt(params, priv, ciphertext):
     a , b = ciphertext
 
    # ADD CODE HERE
-
+    (G, g, h, o) = params
+    hm = b - (priv * a)
     return logh(params, hm)
 
 #####################################################
