@@ -131,7 +131,12 @@ def groupKey(params, pubKeys=[]):
     (G, g, h, o) = params
 
    # ADD CODE HERE
-    
+    pub = None 
+    for public in pubKeys:                                                                                              # Global public key is g^(x1+x2+...+xn)
+        if pub is None:                                                                                                 # Each public key is g^(xi)                                            
+            pub = public
+        else:                                   
+            pub = pub + public                                                                                          # So translates to adding public keys to each other        
 
     return pub
 
@@ -141,7 +146,9 @@ def partialDecrypt(params, priv, ciphertext, final=False):
     assert isCiphertext(params, ciphertext)
     
     # ADD CODE HERE
-
+    (G, g, h, o) = params                                                                                               # Decryption of (a,b): 
+    a1, b = ciphertext                                                                                                  # m = b / a^(xn)
+    b1 = b - (priv * a1)                                                                                                # This translates to b - (a * priv) here
 
     if final:
         return logh(params, b1)
@@ -162,6 +169,16 @@ def corruptPubKey(params, priv, OtherPubKeys=[]):
     (G, g, h, o) = params
     
    # ADD CODE HERE
+    private_key = priv * g
+    pub = None
+
+    for x in OtherPubKeys:                                                                                          # The final public key will have the form                                                         
+        if pub is None:                                                                                             # pub1 -pub1 + pub2 -pub2 + pub3 -pub3 + ... + pubx
+            pub = -x                                                                                                # In the end, final public key will just be our public key
+        else:
+            pub = pub - x                                                                                           # This means only us, with the correct private key can decrypt
+    
+    pub += private_key
 
     return pub
 
