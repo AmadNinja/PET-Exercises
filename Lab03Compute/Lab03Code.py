@@ -32,8 +32,8 @@ def keyGen(params):
    (G, g, h, o) = params
    
    # ADD CODE HERE
-   priv = o.random()                                                                # Key generation selects a private key between 1 and the order of the group
-   pub = priv * g                                                                   # Public keys is private key * g (generator of the group)
+   priv = o.random()                                                                                                        # Key gen: select priv key between 1 - group order
+   pub = priv * g                                                                                                           # Pub key = private key * g (group gen)
    return (priv, pub)
 
 def encrypt(params, pub, m):
@@ -43,10 +43,9 @@ def encrypt(params, pub, m):
 
    # ADD CODE HERE
     (G, g, h, o) = params
-    priv = o.random()
-                                                                                    # A ciphertext is composed of two elements: (k *g, k * pub + m * h), 
-    c = (priv * g, priv * pub + m * h )                                             # where k is a random number mod the order of the group.
-    return c
+    priv = o.random()                                                                                                       # A ciphertext is composed of two elements:                                                                                 
+    c = (priv * g, priv * pub + m * h )                                                                                     # (k * g, k * pub + m * h), 
+    return c                                                                                                                # where k is a random number mod the order of the group.
 
 def isCiphertext(params, ciphertext):
     """ Check a ciphertext """
@@ -93,18 +92,18 @@ def add(params, pub, c1, c2):
     """ Given two ciphertexts compute the ciphertext of the 
         sum of their plaintexts.
     """
-    assert isCiphertext(params, c1)
-    assert isCiphertext(params, c2)
 
-   # ADD CODE HERE                                                                              # Adding to none --> just return the other
-    if c1 is None:
-       assert isCiphertext(params, c2)
-       return c2
-    if c2 is None:
-        assert isCiphertext(params, c1)
+    if c1 is None:                                                                                                          # Adding to none --> just return the other
+       assert isCiphertext(params, c2)                                                                                      # Had to add this before the two assert statements
+       return c2                                                                                                            # As otherwise inside the isCiphertext function 
+    if c2 is None:                                                                                                          # when checking the len of a ciphertext 
+        assert isCiphertext(params, c1)                                                                                     # that is None, returns an error
         return c1
+
+    assert isCiphertext(params, c1)
+    assert isCiphertext(params, c2)                                                             
     
-    (x1, y1) = c1                                                                               # Add first parts and seconds parts together
+    (x1, y1) = c1                                                                                                           # Add first parts and seconds parts together
     (x2, y2) = c2
     c3 = (x1 + x2, y1 + y2)
 
@@ -117,7 +116,7 @@ def mul(params, pub, c1, alpha):
 
    # ADD CODE HERE
     (a, b) = c1                                                                                 
-    c3 = (alpha * a, alpha * b)                                                                         # Multiply each part of the ciphertext by alpha
+    c3 = (alpha * a, alpha * b)                                                                                             # Multiply each part of the ciphertext by alpha
 
     return c3
 
@@ -132,11 +131,11 @@ def groupKey(params, pubKeys=[]):
 
    # ADD CODE HERE
     pub = None 
-    for public in pubKeys:                                                                                              # Global public key is g^(x1+x2+...+xn)
-        if pub is None:                                                                                                 # Each public key is g^(xi)                                            
+    for public in pubKeys:                                                                                                  # Global public key is g^(x1+x2+...+xn)
+        if pub is None:                                                                                                     # Each public key is g^(xi)                                            
             pub = public
         else:                                   
-            pub = pub + public                                                                                          # So translates to adding public keys to each other        
+            pub = pub + public                                                                                              # So translates to adding public keys to each other        
 
     return pub
 
@@ -146,9 +145,9 @@ def partialDecrypt(params, priv, ciphertext, final=False):
     assert isCiphertext(params, ciphertext)
     
     # ADD CODE HERE
-    (G, g, h, o) = params                                                                                               # Decryption of (a,b): 
-    a1, b = ciphertext                                                                                                  # m = b / a^(xn)
-    b1 = b - (priv * a1)                                                                                                # This translates to b - (a * priv) here
+    (G, g, h, o) = params                                                                                                   # Decryption of (a,b): 
+    a1, b = ciphertext                                                                                                      # m = b / a^(xn)
+    b1 = b - (priv * a1)                                                                                                    # This translates to b - (a * priv) here
 
     if final:
         return logh(params, b1)
@@ -172,11 +171,11 @@ def corruptPubKey(params, priv, OtherPubKeys=[]):
     private_key = priv * g
     pub = None
 
-    for x in OtherPubKeys:                                                                                          # The final public key will have the form                                                         
-        if pub is None:                                                                                             # pub1 -pub1 + pub2 -pub2 + pub3 -pub3 + ... + pubx
-            pub = -x                                                                                                # In the end, final public key will just be our public key
-        else:
-            pub = pub - x                                                                                           # This means only us, with the correct private key can decrypt
+    for x in OtherPubKeys:                                                                                                  # The final public key will have the form                                                         
+        if pub is None:                                                                                                     # pub1 -pub1 + pub2 -pub2 + ... + pubx
+            pub = -x                                                                                                        # In the end, final public key = our public key
+        else:                                                                                                               # This means group public key correspons to priv
+            pub = pub - x                                                                                                   # key known to corrupt authority
     
     pub += private_key
 
@@ -194,6 +193,8 @@ def encode_vote(params, pub, vote):
     assert vote in [0, 1]
 
    # ADD CODE HERE
+    v0 = encrypt(params, pub, 1 - vote)                                                                                     # If vote is 1, encrypt 0, if vote is 0, encrypt 1
+    v1 = encrypt(params, pub, vote)                                                                                         # If vote is 1, encrypt 1, if vote is 0, encrypt 0
 
     return (v0, v1)
 
@@ -203,8 +204,14 @@ def process_votes(params, pub, encrypted_votes):
     assert isinstance(encrypted_votes, list)
     
    # ADD CODE HERE
+    tv0 = None
+    tv1 = None
 
-    return tv0, tv1
+    for (v0, v1) in encrypted_votes:                                                                                        # Sum up the number of votes for 0 and 1 using
+        tv0 = add(params, pub, v0, tv0)                                                                                     # previous add function taking advantage of
+        tv1 = add(params, pub, v1, tv1)                                                                                     # homomorphic function, so when decrypting the 
+                                                                                                                            # final ciphertext it will return the total number
+    return tv0, tv1                                                                                                         # of votes for both
 
 def simulate_poll(votes):
     """ Simulates the full process of encrypting votes,
