@@ -96,7 +96,17 @@ def add(params, pub, c1, c2):
     assert isCiphertext(params, c1)
     assert isCiphertext(params, c2)
 
-   # ADD CODE HERE
+   # ADD CODE HERE                                                                              # Adding to none --> just return the other
+    if c1 is None:
+       assert isCiphertext(params, c2)
+       return c2
+    if c2 is None:
+        assert isCiphertext(params, c1)
+        return c1
+    
+    (x1, y1) = c1                                                                               # Add first parts and seconds parts together
+    (x2, y2) = c2
+    c3 = (x1 + x2, y1 + y2)
 
     return c3
 
@@ -106,6 +116,8 @@ def mul(params, pub, c1, alpha):
     assert isCiphertext(params, c1)
 
    # ADD CODE HERE
+    (a, b) = c1                                                                                 
+    c3 = (alpha * a, alpha * b)                                                                         # Multiply each part of the ciphertext by alpha
 
     return c3
 
@@ -119,6 +131,7 @@ def groupKey(params, pubKeys=[]):
     (G, g, h, o) = params
 
    # ADD CODE HERE
+    
 
     return pub
 
@@ -128,6 +141,7 @@ def partialDecrypt(params, priv, ciphertext, final=False):
     assert isCiphertext(params, ciphertext)
     
     # ADD CODE HERE
+
 
     if final:
         return logh(params, b1)
