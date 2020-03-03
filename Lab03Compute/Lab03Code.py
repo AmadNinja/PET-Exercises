@@ -94,8 +94,8 @@ def add(params, pub, c1, c2):
     """
 
     if c1 is None:                                                                                                          # Adding to none --> just return the other
-       assert isCiphertext(params, c2)                                                                                      # Had to add this before the two assert statements
-       return c2                                                                                                            # As otherwise inside the isCiphertext function 
+        assert isCiphertext(params, c2)                                                                                      # Had to add this before the two assert statements
+        return c2                                                                                                            # As otherwise inside the isCiphertext function 
     if c2 is None:                                                                                                          # when checking the len of a ciphertext 
         assert isCiphertext(params, c1)                                                                                     # that is None, returns an error
         return c1
