@@ -52,7 +52,12 @@ def proveKey(params, priv, pub):
     (G, g, hs, o) = params
     
     ## YOUR CODE HERE:
-    
+    w = o.random()                                                                                      # random w
+    witness = w * g                                                                                     # witness = g^w
+
+    c = to_challenge([g, witness])                                                                      # generate challenge
+    r = (w - c * priv) % o                                                                              # calculate response r = W - c*x mod q
+
     return (c, r)
 
 def verifyKey(params, pub, proof):
@@ -92,7 +97,7 @@ def proveCommitment(params, C, r, secrets):
     x0, x1, x2, x3 = secrets
 
     ## YOUR CODE HERE:
-
+    
     return (c, responses)
 
 def verifyCommitments(params, C, proof):
