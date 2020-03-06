@@ -97,18 +97,18 @@ def proveCommitment(params, C, r, secrets):
     x0, x1, x2, x3 = secrets
 
     ## YOUR CODE HERE:
-    (w, w0, w1, w2, w3) = [o.random() for _ in range(5)]
-    wg = w * g
-    w00 = w0 * h0
+    (w, w0, w1, w2, w3) = [o.random() for _ in range(5)]                                                # 5 random w's
+    wg = w * g                                                                                          # Generate W
+    w00 = w0 * h0                                                                                       # Do same for other w's with each part of r
     w11 = w1 * h1
     w22 = w2 * h2
     w33 = w3 * h3
 
-    witness = wg + w00 + w11 + w22 + w33
+    witness = wg + w00 + w11 + w22 + w33                                                                
 
     c = to_challenge([g, h0, h1, h2, h3, witness])
 
-    rr = (w -  c * r) % o
+    rr = (w - c * r) % o                                                
     r0 = (w0 - c * x0) % o
     r1 = (w1 - c * x1) % o
     r2 = (w2 - c * x2) % o
