@@ -162,8 +162,12 @@ def verifyDLEquality(params, K, L, proof):
     c, r = proof
 
     ## YOUR CODE HERE:
+    first_key_verif = (c * K) + (r * g)                                                         # pub key 1: K, pub key 2: L             
+    second_key_verif = (c * L) + (r * h0)                                                       # c,r challenge and response
 
-    return # YOUR RETURN HERE
+    c2 = to_challenge([g, h0, first_key_verif, second_key_verif])
+
+    return c == c2
 
 #####################################################
 # TASK 4 -- Prove correct encryption and knowledge of 
@@ -187,7 +191,16 @@ def proveEnc(params, pub, Ciphertext, k, m):
     a, b = Ciphertext
 
     ## YOUR CODE HERE:
+    first_w, second_w = [o.random() for _ in range(2)]
 
+    Wa = first_w * g
+    Wb = (first_w * pub) + (second_w * h0)
+
+    c = to_challenge([g, h0, Wa, Wb, pub, a, b])
+
+    rk = (first_w - (c * k)) % o
+    rm = (second_w - (c * m)) % o
+    
     return (c, (rk, rm))
 
 def verifyEnc(params, pub, Ciphertext, proof):
@@ -197,8 +210,11 @@ def verifyEnc(params, pub, Ciphertext, proof):
     (c, (rk, rm)) = proof
 
     ## YOUR CODE HERE:
+    first_key_verif = (c * a) + (rk * g)
+    second_key_verif = (c * b) + (rk * pub) + (rm * h0)
 
-    return ## YOUR RETURN HERE
+    c2 = to_challenge([g, h0, first_key_verif, second_key_verif, pub, a, b])
+    return c == c2 
 
 
 #####################################################
@@ -222,16 +238,29 @@ def prove_x0eq10x1plus20(params, C, x0, x1, r):
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
+    first_w = o.random()                                                                    # Random w1 and w2
+    second_w = o.random()
 
-    return ## YOUR RETURN HERE
+    w = first_w * g + second_w * h1 + (10 * second_w * h0)                                  # W = g^w1 * h^w2 
+    c = to_challenge([g, h0, h1, w])                                                        # c = H(g, h, C, W)
+
+    r1 = (first_w - (c * r)) % o                                                            # r1 = w1 - (c v)
+    r2 = (second_w - (c * x1)) % o                                                          # r2 = w2 - (c o)
+
+    return (c, (r1, r2))
 
 def verify_x0eq10x1plus20(params, C, proof):
     """ Verify that proof of knowledge of C and x0 = 10 x1 + 20. """
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
+    (c, (r1, r2)) = proof                                                                   # Take outputs from previous function
 
-    return ## YOUR RETURN HERE
+    w = r1 * g + r2 * h1 + (10 * r2 * h0) + c * (C - (20 * h0))                             # Calculate last value to give hash 
+
+    c2 = to_challenge([g, h0, h1, w])                                                       # H(g, h, C, g^r1 h^r2 C^c) == c
+
+    return c == c2
 
 #####################################################
 # TASK 6 -- (OPTIONAL) Prove that a ciphertext is either 0 or 1
