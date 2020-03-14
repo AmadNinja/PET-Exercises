@@ -104,11 +104,11 @@ def proveCommitment(params, C, r, secrets):
     w22 = w2 * h2
     w33 = w3 * h3
 
-    witness = wg + w00 + w11 + w22 + w33                                                                
+    witness = wg + w00 + w11 + w22 + w33                                                                # Calculate witness
 
-    c = to_challenge([g, h0, h1, h2, h3, witness])
+    c = to_challenge([g, h0, h1, h2, h3, witness])                                                      # Generate challenge
 
-    rr = (w - c * r) % o                                                
+    rr = (w - c * r) % o                                                                                # Calculate each corresponding response                                
     r0 = (w0 - c * x0) % o
     r1 = (w1 - c * x1) % o
     r2 = (w2 - c * x2) % o
@@ -157,15 +157,15 @@ def proveDLEquality(params, x, K, L):
     return (c, r)
 
 def verifyDLEquality(params, K, L, proof):
-    """ Return whether the verification of equality of two discrete logarithms succeeded. """ 
-    (G, g, (h0, h1, h2, h3), o) = params
+    """ Return whether the verification of equality of two discrete logarithms succeeded. """          # Checking if ZK proof of two discrete 
+    (G, g, (h0, h1, h2, h3), o) = params                                                               # logs being equal is correct
     c, r = proof
 
     ## YOUR CODE HERE:
-    first_key_verif = (c * K) + (r * g)                                                         # pub key 1: K, pub key 2: L             
-    second_key_verif = (c * L) + (r * h0)                                                       # c,r challenge and response
+    first_key_verif = (c * K) + (r * g)                                                                 # pub key 1: K, pub key 2: L             
+    second_key_verif = (c * L) + (r * h0)                                                               # c,r challenge and response
 
-    c2 = to_challenge([g, h0, first_key_verif, second_key_verif])
+    c2 = to_challenge([g, h0, first_key_verif, second_key_verif])                                       # 
 
     return c == c2
 
@@ -238,14 +238,14 @@ def prove_x0eq10x1plus20(params, C, x0, x1, r):
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
-    first_w = o.random()                                                                    # Random w1 and w2
+    first_w = o.random()                                                                        # Random w1 and w2
     second_w = o.random()
 
-    w = first_w * g + second_w * h1 + (10 * second_w * h0)                                  # W = g^w1 * h^w2 
-    c = to_challenge([g, h0, h1, w])                                                        # c = H(g, h, C, W)
+    w = first_w * g + second_w * h1 + (10 * second_w * h0)                                      # W = g^w1 * h^w2 
+    c = to_challenge([g, h0, h1, w])                                                            # c = H(g, h, C, W)
 
-    r1 = (first_w - (c * r)) % o                                                            # r1 = w1 - (c v)
-    r2 = (second_w - (c * x1)) % o                                                          # r2 = w2 - (c o)
+    r1 = (first_w - (c * r)) % o                                                                # r1 = w1 - (c v)
+    r2 = (second_w - (c * x1)) % o                                                              # r2 = w2 - (c o)
 
     return (c, (r1, r2))
 
@@ -254,11 +254,11 @@ def verify_x0eq10x1plus20(params, C, proof):
     (G, g, (h0, h1, h2, h3), o) = params
 
     ## YOUR CODE HERE:
-    (c, (r1, r2)) = proof                                                                   # Take outputs from previous function
+    (c, (r1, r2)) = proof                                                                       # Take outputs from previous function
 
-    w = r1 * g + r2 * h1 + (10 * r2 * h0) + c * (C - (20 * h0))                             # Calculate last value to give hash 
+    w = r1 * g + r2 * h1 + (10 * r2 * h0) + c * (C - (20 * h0))                                 # Calculate last value to give hash 
 
-    c2 = to_challenge([g, h0, h1, w])                                                       # H(g, h, C, g^r1 h^r2 C^c) == c
+    c2 = to_challenge([g, h0, h1, w])                                                           # H(g, h, C, g^r1 h^r2 C^c) == c
 
     return c == c2
 
