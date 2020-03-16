@@ -20,7 +20,7 @@ def setup():
     """ Generates the Cryptosystem Parameters. """
     G = EcGroup(nid=713)
     g = G.hash_to_point(b"g")
-    hs = [G.hash_to_point(("h%s" % i).encode("utf8")) for i in range(4)]
+    hs = [G.hash_to_point(("h%s" % i).encode("utf8")) for i in range(4)]                 
     o = G.order()
     return (G, g, hs, o)
 
@@ -37,7 +37,7 @@ def to_challenge(elements):
     Chash =  sha256(Cstring).digest()
     return Bn.from_binary(Chash)
 
-#####################################################
+#####################################################                                            # Here
 # TASK 1 -- Prove knowledge of a DH public key's 
 #           secret.
 

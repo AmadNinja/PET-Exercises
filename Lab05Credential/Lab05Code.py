@@ -90,19 +90,19 @@ def credential_EncryptUserSecret(params, pub, priv):
     #                     b = k * pub + v * g and 
     #                     pub = priv * g}
 
-    (kA, kV, kPriv) = [o.random() for _ in range(0, 3)]
+    (kA, kV, kPriv) = [o.random() for _ in range(0, 3)]                                                 # Here, generate 3 random values 
 
-    Wa = kA * g
-    Wb = kA * pub + kV * g
-    Wpriv = kPriv * g
+    Wa = kA * g                                                                                         # g^kA
+    Wb = kA * pub + kV * g                                                                              # g^kA * g^kV
+    Wpriv = kPriv * g                                                                                   # g^kPriv
 
-    c = to_challenge([g, pub, a, b, Wa, Wb, Wpriv])
+    c = to_challenge([g, pub, a, b, Wa, Wb, Wpriv])                                                     # Generate challenge
 
-    rk = (kA - (c * k)) % o
+    rk = (kA - (c * k)) % o                                                                             # Generate response for each part
     rv = (kV - (c * v)) % o
     rpriv = (kPriv - (c * priv)) % o
 
-    # Return the fresh v, the encryption of v and the proof.
+    # Return the fresh v, the encryption of v and the proof.                                            # to here
     proof = (c, rk, rv, rpriv)
     return v, ciphertext, proof
 
@@ -148,12 +148,12 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     # The ciphertext of the encrypted attribute v
     a, b = ciphertext
 
-    # 1) Create a "u" as u = b*g 
+    # 1) Create a "u" as u = b*g                                                                        # Here
     # 2) Create a X1b as X1b == b * X1 == (b * x1) * h
     #     and x1b = (b * x1) mod o 
     
     # 1)
-    r = o.random()
+    r = o.random()                                                                                      # Follow 1 and 2)
     u = r * g
 
     # 2)
@@ -192,7 +192,7 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     WCx0 = (new_x0 * g) + (new_x0_bar * h)
 
     c = to_challenge([
-        g, h, pub, a, b, X1, X1b1, new_a, new_b, Cx0, WX1, WX1b1, Wx1b2, Wu, Wnew_a, Wnew_b, WCx0])
+g, h, pub, a, b, X1, X1b1, new_a, new_b, Cx0, WX1, WX1b1, Wx1b2, Wu, Wnew_a, Wnew_b, WCx0])
 
     rx1 = (new_X1 - (c * x1)) % o
     rtest = (new_r - (c * r)) % o
@@ -203,7 +203,7 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
 
     rs = [rx1, rtest, rx1b, rr_prime, rx0, rx0_bar]
 
-    proof = (c, rs, X1b1) # Where rs are multiple responses
+    proof = (c, rs, X1b1) # Where rs are multiple responses                                             # to here
 
     return u, ciphertext, proof
 
