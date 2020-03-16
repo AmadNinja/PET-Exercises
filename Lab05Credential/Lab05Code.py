@@ -162,10 +162,10 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     assert(X1b1 == X1b2)
     x1b = (r * x1) % o
 
-    # 3) The encrypted MAC is u, and an encrypted u_prime defined as 
+    # 3) The encrypted MAC is u, and an encrypted u_prime defined as                                    
     #    E( (b*x0) * g + (x1 * b * v) * g ) + E(0; r_prime)
     
-    r_prime = o.random()
+    r_prime = o.random()                                                                                # Apply 3) 
     new_a = (r_prime * g) + (x1b * a)
     new_b = (r_prime * pub) + (x1b * b) + (x0 * u)
 
@@ -183,7 +183,7 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
 
     (new_X1, new_r, new_X1b, new_r_prime, new_x0, new_x0_bar) = [o.random() for _ in range(6)]
 
-    WX1 = new_X1 * h
+    WX1 = new_X1 * h                                                                                    # Each line here corresponds to a line up there
     WX1b1 = new_r * X1
     Wx1b2 = new_X1b * h
     Wu = new_r * g
@@ -192,16 +192,16 @@ def credential_Issuing(params, pub, ciphertext, issuer_params):
     WCx0 = (new_x0 * g) + (new_x0_bar * h)
 
     c = to_challenge([
-g, h, pub, a, b, X1, X1b1, new_a, new_b, Cx0, WX1, WX1b1, Wx1b2, Wu, Wnew_a, Wnew_b, WCx0])
+g, h, pub, a, b, X1, X1b1, new_a, new_b, Cx0, WX1, WX1b1, Wx1b2, Wu, Wnew_a, Wnew_b, WCx0])             # Generate challenge
 
-    rx1 = (new_X1 - (c * x1)) % o
+    rx1 = (new_X1 - (c * x1)) % o                                                                       # Each corresponding response
     rtest = (new_r - (c * r)) % o
     rx1b = (new_X1b - (c * x1b)) % o
     rr_prime = (new_r_prime - (c * r_prime)) % o
     rx0 = (new_x0 - (c * x0)) % o
     rx0_bar = (new_x0_bar - (c * x0_bar)) % o
 
-    rs = [rx1, rtest, rx1b, rr_prime, rx0, rx0_bar]
+    rs = [rx1, rtest, rx1b, rr_prime, rx0, rx0_bar]                                                     # All responses                                                    
 
     proof = (c, rs, X1b1) # Where rs are multiple responses                                             # to here
 
@@ -262,22 +262,22 @@ def credential_show(params, issuer_pub_params, u, u_prime, v):
     (Cx0, iparams) = issuer_pub_params
     X1 = iparams
 
-    # 1) First blind the credential (u, u_prime)
+    # 1) First blind the credential (u, u_prime)                                                        # Here, disguise the credential 
     #    using (alpha * u, alpha * u_prime) for a
     #    random alpha.
     
-    alpha = o.random()
+    alpha = o.random()                                                                                  
     u = alpha * u
     u_prime = alpha * u_prime
 
-    # 2) Implement the "Show" protocol (p.9) for a single attribute v.
+    # 2) Implement the "Show" protocol (p.9) for a single attribute v.                                  
     #    Cv is a commitment to v and Cup is C_{u'} in the paper. 
 
-    (z, r) = [o.random() for _ in range(2)]
-    Cv = (v * u) + (z * h)
-    Cup = u_prime + (r * g)
+    (z, r) = [o.random() for _ in range(2)]                                                             # Show paper?
+    Cv = (v * u) + (z * h)                                                                              # u^v * h^z   
+    Cup = u_prime + (r * g)                                                                             # u' * g^r
 
-    tag = (u, Cv, Cup)
+    tag = (u, Cv, Cup)                                                                                  # tag = sigma
 
     # Proof or knowledge of the statement
     #
@@ -285,18 +285,18 @@ def credential_show(params, issuer_pub_params, u, u_prime, v):
     #           Cv = v *u + z1 * h and
     #           V  = r * (-g) + z1 * X1 }
 
-    (wr, wz, wv) = [o.random() for _ in range(3)]
+    (wr, wz, wv) = [o.random() for _ in range(3)]                                                       # Now we compute the proof
 
     WCv = (wv * u) + (wz * h)
     WV = (wr * (-g)) + (wz * X1)
 
-    c = to_challenge([g, h, u, WCv, WV, Cv, X1, Cx0, Cup])
+    c = to_challenge([g, h, u, WCv, WV, Cv, X1, Cx0, Cup])                                              # Gen challenge
 
-    rr = (wr - (c * r)) % o
+    rr = (wr - (c * r)) % o                                                                             # Gen relevant responses
     rz1 = (wz - (c * z)) % o
     rv = (wv - (c * v)) % o
 
-    proof = (c, rr, rz1, rv)
+    proof = (c, rr, rz1, rv)                                                                            
     return tag, proof
 
 def credential_show_verify(params, issuer_params, tag, proof):
@@ -311,15 +311,15 @@ def credential_show_verify(params, issuer_params, tag, proof):
 
     # Verify proof of correct credential showing
     (c, rr, rz1, rv) = proof
-    (u, Cv, Cup) = tag
+    (u, Cv, Cup) = tag                                                                                  # Here
 
-    V = (x0 * u) + (x1 * Cv) - Cup
+    V = (x0 * u) + (x1 * Cv) - Cup                                                                      # u^xo * Cv^x1 / Cup
     WCv_prime = (rv * u) + (rz1 * h) + (c * Cv)
     WV_prime = rr * (-g) + (rz1 * X1) + (c * V)
 
-    c_prime = to_challenge([g, h, u, WCv_prime, WV_prime, Cv, X1, Cx0, Cup])
+    c_prime = to_challenge([g, h, u, WCv_prime, WV_prime, Cv, X1, Cx0, Cup])                            
 
-    return c == c_prime
+    return c == c_prime                                                                                 # To here
 
 #####################################################
 # TASK 4 -- Modify the standard Show / ShowVerify process
@@ -341,10 +341,10 @@ def credential_show_pseudonym(params, issuer_pub_params, u, u_prime, v, service_
     N = G.hash_to_point(service_name)
     pseudonym = v * N
 
-    z1 = o.random()
+    z1 = o.random()                                                                                     # Here
     r = o.random()
 
-    Cv = (v * u) + (z1 * h)
+    Cv = (v * u) + (z1 * h)                                                                             # Re-use code from task 3 
     Cup = u_prime + (r * g)
     tag = (u, Cv, Cup)
 
@@ -354,11 +354,11 @@ def credential_show_pseudonym(params, issuer_pub_params, u, u_prime, v, service_
     WV = (wr * (-g)) + (wz * X1)
 
     # Pseudonym
-    WPseudo = wv * N
+    WPseudo = wv * N                                                                                    # This is not copied
 
-    c = to_challenge([g, h, u, WCv, WV, Cv, X1, Cx0, Cup, WPseudo, pseudonym])
+    c = to_challenge([g, h, u, WCv, WV, Cv, X1, Cx0, Cup, WPseudo, pseudonym])                          # 'Til here
 
-    rr = (wr - (c * r)) % o
+    rr = (wr - (c * r)) % o                                                                             # Gen relevant responses, but with extra for pseudo
     rz = (wz - (c * z1)) % o
     rv = (wv - (c * v)) % o
     rPseudo = (wv -(c * v)) % o
@@ -381,19 +381,19 @@ def credential_show_verify_pseudonym(params, issuer_params, pseudonym, tag, proo
     ## The EC point corresponding to the service
     N = G.hash_to_point(service_name)
 
-    ## Verify the correct Show protocol and the correctness of the pseudonym
+    ## Verify the correct Show protocol and the correctness of the pseudonym                            # Here
     (c, rr, rz, rv, rPseudo) = proof
     (u, Cv, Cup) = tag
 
-    V = (x0 * u) + (x1 * Cv) - Cup
+    V = (x0 * u) + (x1 * Cv) - Cup                                                                      # Same verif as task 3, only dif is WPseudo_prime 
 
     WCv_prime = (rv * u) + (rz * h) + (c * Cv)
     WV_prime = rr * (-g) + (rz * X1) + (c * V)
-    WPseudo_prime = (rPseudo * N) + (c * pseudonym)
+    WPseudo_prime = (rPseudo * N) + (c * pseudonym)                                                     # Witness for pseudonym'
 
-    c_prime = to_challenge([g, h, u, WCv_prime, WV_prime, Cv, X1, Cx0, Cup, WPseudo_prime, pseudonym])
+    c_prime = to_challenge([g, h, u, WCv_prime, WV_prime, Cv, X1, Cx0, Cup, WPseudo_prime, pseudonym])  # Gen challenge  
 
-    return c == c_prime
+    return c == c_prime                                                                                 # Check challenge corresponds
 
 #####################################################
 # TASK Q1 -- Answer the following question:
